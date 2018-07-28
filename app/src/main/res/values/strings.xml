@@ -6,4 +6,9 @@
     <string name="result">Bluetooth devices nearby</string>
     <string name="no_result">There are no paired Bluetooth devices</string>
     <string name="paired_devices">Paired devices</string>
+    <string name="scan">Scan</string>
+    <string name="bluetooth_enabled">Bluetooth has been enabled</string>
+    <string name="bluetooth_disabled">Bluetooth has been disabled</string>
+    <string name="bluetooth_canceled">Bluetooth enabling has been canceled</string>
+
 </resources>
