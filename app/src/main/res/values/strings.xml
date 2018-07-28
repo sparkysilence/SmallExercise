@@ -1,0 +1,9 @@
+<resources>
+    <string name="app_name">Small Exercise</string>
+    <string name="search">Searching for nearby bluetooth devices</string>
+    <string name="enable">please enable bluetooth</string>
+    <string name="not_supported">Your device do not support bluetooth</string>
+    <string name="result">Bluetooth devices nearby</string>
+    <string name="no_result">There are no paired Bluetooth devices</string>
+    <string name="paired_devices">Paired devices</string>
+</resources>
