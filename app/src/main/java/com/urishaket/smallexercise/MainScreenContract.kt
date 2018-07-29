@@ -1,13 +1,23 @@
 package com.urishaket.smallexercise
 
+import android.app.Activity
 import android.bluetooth.BluetoothDevice
-import android.util.Log
-import com.urishaket.smallexercise.R.id.paired_device_list
 
-class MainScreenContract(){
+interface MainScreenContract {
 
+    interface View {
+        fun setButtonText(state: Int)
+        fun setHeaderText(state: Int)
+        fun setRecyclerAdapter(listOFDevices: ArrayList<BluetoothDevice>)
+        fun isDeviceListEmpty ():Boolean
+        fun getFirstDeviceFromList ():BluetoothDevice
+        fun updateNearbyList(dev : BluetoothDevice)
+    }
 
-}
-fun initBrodcaster(){
-
+    interface Presenter {
+        fun scanForBT()
+        fun isAdapterEnabled ():Boolean
+        fun init(activity: Activity)
+        fun getPairedDeviceList():Set<BluetoothDevice>
+    }
 }

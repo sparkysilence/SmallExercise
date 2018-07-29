@@ -7,11 +7,15 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import kotlinx.android.synthetic.main.bt_list_item.view.*
+import android.bluetooth.BluetoothDevice
+import android.text.method.TextKeyListener.clear
 
-class DevicesRecycleViewAdapter(val ids : ArrayList<String>,val uuids : ArrayList<String>, val context: Context) : RecyclerView.Adapter<ViewHolder>() {
 
+
+
+class DevicesRecycleViewAdapter(val devices: ArrayList<BluetoothDevice>, val context: Context) : RecyclerView.Adapter<ViewHolder>() {
     override fun getItemCount(): Int {
-        return ids.size
+        return devices.size
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
@@ -19,8 +23,24 @@ class DevicesRecycleViewAdapter(val ids : ArrayList<String>,val uuids : ArrayLis
     }
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-        holder?.bt_device?.text = ids.get(position)
-        holder?.bt_device_uuid?.text = uuids.get(position)
+        holder?.bt_device?.text = devices.get(position).name
+        if (devices.get(position).uuids!=null){
+        holder?.bt_device_uuid?.text =devices.get(position).uuids[0].toString()}else{
+            holder?.bt_device_uuid?.text =devices.get(position).address
+        }
+    }
+
+    fun clear() {
+        if (devices.size>0){
+            devices.removeAt(0)
+            notifyItemRemoved(0)
+            notifyItemRangeChanged(0, devices.size)
+        }
+    }
+
+    fun add(dev:BluetoothDevice){
+        devices.add(dev)
+        notifyDataSetChanged()
     }
 }
 
@@ -28,3 +48,4 @@ class ViewHolder (view: View) : RecyclerView.ViewHolder(view) {
     val bt_device = view.bluetooth_device
     val bt_device_uuid = view.bluetooth_device_uuid
 }
+

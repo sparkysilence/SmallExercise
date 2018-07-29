@@ -1,74 +1,70 @@
 package com.urishaket.smallexercise
 
-import android.Manifest
 import android.app.Activity
-import android.app.Fragment
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
-import android.content.BroadcastReceiver
-import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.os.Bundle
-import android.os.Parcelable
-import android.support.v4.app.ActivityCompat
 import android.support.v7.widget.DividerItemDecoration
 import android.support.v7.widget.LinearLayoutManager
-import android.util.Log
 import android.view.ViewGroup
 import android.view.LayoutInflater
 import android.view.View
 import kotlinx.android.synthetic.main.fragment_main_screen.*
 import org.jetbrains.anko.support.v4.toast
-import org.jetbrains.anko.toast
 
-class MainScreenFragment : android.support.v4.app.Fragment(){
+
+class MainScreenFragment() : android.support.v4.app.Fragment(), MainScreenContract.View {
+    private val TAG = "MainFragment"
+
+    private val REQUEST_ENABLE_BLUETOOTH = 1
+
+    private val arrayOfFoundBTDevices: ArrayList<BluetoothDevice> = ArrayList()
+
+    var mDevicesRecycleViewAdapter: DevicesRecycleViewAdapter? = null
+
+    var presenter  = MainScreenFragmentPresenter()
 
     companion object {
-
         fun newInstance(): MainScreenFragment {
             return MainScreenFragment()
         }
-
-        val instance = this
     }
-
-
-private var adapter: BluetoothAdapter? = null
-private lateinit var paired_devices: Set<BluetoothDevice>
-private val REQUEST_ENABLE_BLUETOOTH = 1
-val arrayOfFoundBTDevicesUUID: ArrayList<String> = ArrayList()
-val arrayOfFoundBTDevices: ArrayList<String> = ArrayList()
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
 
-        return inflater.inflate(R.layout.fragment_main_screen,container, false)
+        return inflater.inflate(R.layout.fragment_main_screen, container, false)
     }
+
     override fun onStart() {
         super.onStart()
-        scan_button.setOnClickListener(object : View.OnClickListener {
-            override fun onClick(v: View?) {
-                adapter!!.startDiscovery()
-            }})
+
+        presenter!!.init(getActivity()!!)
         val dividerItemDecoration = DividerItemDecoration(paired_device_list.getContext(),
                 LinearLayoutManager.VERTICAL)
         paired_device_list.addItemDecoration(dividerItemDecoration)
         paired_device_list.layoutManager = LinearLayoutManager(getActivity())
         device_list.addItemDecoration(dividerItemDecoration)
         device_list.layoutManager = LinearLayoutManager(getActivity())
-        checkBlueToothAdapter()
-        pairedDeviceList()
-        checkBTPermissions()
-        val filter = IntentFilter(BluetoothDevice.ACTION_FOUND)
-        getActivity()!!.registerReceiver(mReceiver, filter)
-    }
 
+        pairedDeviceList()
+
+        val filter = IntentFilter()
+        filter.addAction(BluetoothDevice.ACTION_FOUND)
+        filter.addAction(BluetoothAdapter.ACTION_DISCOVERY_FINISHED)
+        filter.addAction(BluetoothDevice.ACTION_UUID)
+        val mReceiver = SearchDeviceBroadcastReciver(this,presenter!!)
+        getActivity()!!.registerReceiver(mReceiver, filter)
+        mDevicesRecycleViewAdapter = DevicesRecycleViewAdapter(arrayOfFoundBTDevices, getActivity()!!)
+        device_list.adapter = mDevicesRecycleViewAdapter
+    }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
         if (requestCode == REQUEST_ENABLE_BLUETOOTH) {
             if (resultCode == Activity.RESULT_OK) {
-                if (adapter!!.isEnabled) {
+                if (presenter!!.isAdapterEnabled()) {
                     toast(R.string.bluetooth_enabled)
                 } else {
                     toast(R.string.bluetooth_disabled)
@@ -77,48 +73,60 @@ val arrayOfFoundBTDevices: ArrayList<String> = ArrayList()
                 toast(R.string.bluetooth_canceled)
             }
         }
-
     }
 
-    fun checkBlueToothAdapter (){
-        adapter = BluetoothAdapter.getDefaultAdapter()
-        if (adapter == null) {
-            return
-        }
-        if (!adapter!!.isEnabled) {
-            val enableBluetoothIntent = Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)
-            startActivityForResult(enableBluetoothIntent, REQUEST_ENABLE_BLUETOOTH)
-            header.text = getString(R.string.enable)
+    override fun setButtonText(state: Int) {
+        when (state) {
+            0 -> scan_button.text = getString(R.string.no_result)
+            1 -> scan_button.text = getString(R.string.result)
+            2 -> scan_button.text = getString(R.string.scan)
         }
     }
 
-    fun checkBTPermissions() {
-        var permissionCheck = getActivity()!!.checkSelfPermission("Manifest.permission.ACCESS_FINE_LOCATION");
-        permissionCheck += getActivity()!!.checkSelfPermission("Manifest.permission.ACCESS_COARSE_LOCATION");
-        if (permissionCheck != 0) {
-            ActivityCompat.requestPermissions(getActivity()!!, arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION), 101); //Any number
+    override fun setHeaderText(state: Int) {
+        when (state) {
+            0 -> header.text = getString(R.string.paired_devices_no_result)
+            1 -> header.text = getString(R.string.enable)
         }
     }
 
-    private fun pairedDeviceList() {
+    override fun setRecyclerAdapter(listOFDevices: ArrayList<BluetoothDevice>) {
+        paired_device_list.adapter = DevicesRecycleViewAdapter(listOFDevices, getActivity()!!)
+    }
 
-        paired_devices = adapter!!.bondedDevices
-        val list_of_names: ArrayList<String> = ArrayList()
-        val list_of_uuids: ArrayList<String> = ArrayList()
-        if (!paired_devices.isEmpty()) {
-            for (device: BluetoothDevice in paired_devices) {
-                list_of_names.add(device.name)
-                list_of_uuids.add(device.uuids.toString())
+    override fun isDeviceListEmpty ():Boolean{
+        return arrayOfFoundBTDevices.isEmpty()
+    }
+
+    override fun getFirstDeviceFromList ():BluetoothDevice{
+        return arrayOfFoundBTDevices[0];
+    }
+
+    override fun updateNearbyList(dev : BluetoothDevice){
+        var remove = ArrayList<BluetoothDevice>()
+        var index = ArrayList<Int>()
+        if (mDevicesRecycleViewAdapter!!.devices.size>0){
+            for (i in mDevicesRecycleViewAdapter!!.devices){
+                if (i.address == dev.address){
+                    remove.add(i) //mDevicesRecycleViewAdapter!!.devices.indexOf(i))
+                }
             }
-        } else {
-            header.text = getString(R.string.no_result)
+            mDevicesRecycleViewAdapter!!.devices.removeAll(remove)
+//            mDevicesRecycleViewAdapter!!.notifyItemRemoved(index)
         }
-        paired_device_list.adapter = DevicesRecycleViewAdapter(list_of_names, list_of_uuids, getActivity()!!)
+        mDevicesRecycleViewAdapter!!.add(dev)
     }
 
-    fun updateNearbyList(name: String, addr: String){
-       arrayOfFoundBTDevices.add(name)
-       arrayOfFoundBTDevicesUUID.add(addr)
-       device_list.adapter = DevicesRecycleViewAdapter(arrayOfFoundBTDevices,arrayOfFoundBTDevicesUUID ,getActivity()!!)
+    fun pairedDeviceList() {
+        var paired_devices = presenter!!.getPairedDeviceList()
+        if (!paired_devices.isEmpty()) {
+            val listOFDevices: ArrayList<BluetoothDevice> = ArrayList()
+            for (device: BluetoothDevice in paired_devices) {
+                listOFDevices.add(device)
+            }
+            setRecyclerAdapter(listOFDevices)
+        } else {
+            setHeaderText(0)
+        }
     }
 }
