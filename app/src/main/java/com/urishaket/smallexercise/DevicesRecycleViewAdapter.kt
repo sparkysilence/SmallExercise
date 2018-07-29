@@ -8,12 +8,11 @@ import android.view.View
 import android.view.ViewGroup
 import kotlinx.android.synthetic.main.bt_list_item.view.*
 import android.bluetooth.BluetoothDevice
-import android.text.method.TextKeyListener.clear
-
-
-
+import android.util.Log
 
 class DevicesRecycleViewAdapter(val devices: ArrayList<BluetoothDevice>, val context: Context) : RecyclerView.Adapter<ViewHolder>() {
+    private val TAG = "Recycle Adapter"
+
     override fun getItemCount(): Int {
         return devices.size
     }
@@ -31,11 +30,11 @@ class DevicesRecycleViewAdapter(val devices: ArrayList<BluetoothDevice>, val con
     }
 
     fun clear() {
-        if (devices.size>0){
-            devices.removeAt(0)
-            notifyItemRemoved(0)
-            notifyItemRangeChanged(0, devices.size)
-        }
+        val size  = devices.size
+        devices.clear()
+        notifyItemRangeRemoved(0,size)
+        notifyDataSetChanged()
+        Log.i(TAG,"item count: " + getItemCount())
     }
 
     fun add(dev:BluetoothDevice){
@@ -48,4 +47,3 @@ class ViewHolder (view: View) : RecyclerView.ViewHolder(view) {
     val bt_device = view.bluetooth_device
     val bt_device_uuid = view.bluetooth_device_uuid
 }
-

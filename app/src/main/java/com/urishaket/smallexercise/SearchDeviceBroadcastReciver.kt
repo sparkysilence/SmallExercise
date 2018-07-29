@@ -7,8 +7,15 @@ import android.content.Context
 import android.content.Intent
 import android.util.Log
 
-class SearchDeviceBroadcastReciver(var mainFragment:MainScreenContract.View,var presenter: MainScreenContract.Presenter):BroadcastReceiver(){
+class SearchDeviceBroadcastReciver(private var mainFragment:MainScreenContract.View):BroadcastReceiver(){
     private val TAG = "BroadcastReciver"
+
+    private val DISCOVERY_FINISHED =  "Discovery has finished"
+
+    private val DEVICE_EXTRA_ADDRESS =  "DeviceExtra address"
+
+    private val UUID_NULL =  "uuidExtra is still null"
+
     override fun onReceive(context: Context, intent: Intent) {
         val action = intent.action
         if (BluetoothDevice.ACTION_FOUND == action) {
@@ -19,22 +26,21 @@ class SearchDeviceBroadcastReciver(var mainFragment:MainScreenContract.View,var 
             }
         }else if (BluetoothAdapter.ACTION_DISCOVERY_FINISHED.equals(action)) {
             if (!mainFragment.isDeviceListEmpty()) {
-                var device = mainFragment.getFirstDeviceFromList();
+                val device = mainFragment.getFirstDeviceFromList();
                 device.fetchUuidsWithSdp();
                 mainFragment.setButtonText(2)
             }else{
                 mainFragment.setButtonText(0)
             }
-            Log.i(TAG,"Discovery has finished")
-            presenter.scanForBT()
+            Log.i(TAG,DISCOVERY_FINISHED)
         } else if (BluetoothDevice.ACTION_UUID.equals(action)) {
-            var deviceExtra = intent.getParcelableExtra<BluetoothDevice>(BluetoothDevice.EXTRA_DEVICE);
-            var uuidExtra = intent.getParcelableArrayExtra(BluetoothDevice.EXTRA_UUID);
-            Log.i(TAG,"DeviceExtra address - " + deviceExtra.getAddress());
+            val deviceExtra = intent.getParcelableExtra<BluetoothDevice>(BluetoothDevice.EXTRA_DEVICE);
+            val uuidExtra = intent.getParcelableArrayExtra(BluetoothDevice.EXTRA_UUID);
+            Log.i(TAG,DEVICE_EXTRA_ADDRESS + deviceExtra.getAddress());
             if (uuidExtra != null) {
                 mainFragment.updateNearbyList(deviceExtra)
             } else {
-                Log.i(TAG,"uuidExtra is still null");
+                Log.i(TAG,UUID_NULL);
             }
         }
     }

@@ -39,7 +39,7 @@ class MainScreenFragmentPresenter:MainScreenContract.Presenter{
         if (!adapter!!.isEnabled) {
             val enableBluetoothIntent = Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)
             activity.startActivityForResult(enableBluetoothIntent, REQUEST_ENABLE_BLUETOOTH)
-            view.setHeaderText(1)
+            view.setHeaderText(MainScreenFragment().HEADER_TEXT_ENABLE)
         }
     }
 
