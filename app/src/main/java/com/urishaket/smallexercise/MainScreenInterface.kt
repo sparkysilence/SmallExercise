@@ -1,9 +1,11 @@
 package com.urishaket.smallexercise
 
 import android.app.Activity
+import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
 
-interface MainScreenContract {
+interface MainScreenInterface
+{
 
     interface View {
         fun setButtonText(state: Int)
@@ -14,10 +16,4 @@ interface MainScreenContract {
         fun updateNearbyList(dev : BluetoothDevice)
     }
 
-    interface Presenter {
-        fun scanForBT()
-        fun isAdapterEnabled ():Boolean
-        fun init(activity: Activity)
-        fun getPairedDeviceList():Set<BluetoothDevice>
-    }
 }

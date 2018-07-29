@@ -1,11 +1,13 @@
 package com.urishaket.smallexercise
 
+import android.Manifest
 import android.app.Activity
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
 import android.content.Intent
 import android.content.IntentFilter
 import android.os.Bundle
+import android.support.v4.app.ActivityCompat
 import android.support.v7.widget.DividerItemDecoration
 import android.support.v7.widget.LinearLayoutManager
 import android.util.Log
@@ -15,16 +17,16 @@ import android.view.View
 import kotlinx.android.synthetic.main.fragment_main_screen.*
 import org.jetbrains.anko.support.v4.toast
 
-class MainScreenFragment() : android.support.v4.app.Fragment(), MainScreenContract.View {
+class MainScreenFragment() : android.support.v4.app.Fragment(), MainScreenInterface.View {
     val SCAN_BUTTON_TEXT_NO_RESULT = 0
 
     val SCAN_BUTTON_TEXT_RESULT = 1
 
     val HEADER_TEXT_NO_RESULT = 0
 
-    val HEADER_TEXT_ENABLE = 1
+    val SCAN_BUTTON_TEXT_SCAN = 1
 
-    val SCAN_BUTTON_TEXT_SCAN = 2
+    private var adapter: BluetoothAdapter? = null
 
     private val TAG = "MainFragment"
 
@@ -36,7 +38,7 @@ class MainScreenFragment() : android.support.v4.app.Fragment(), MainScreenContra
 
     private lateinit var mPairedDevicesRecycleViewAdapter: DevicesRecycleViewAdapter
 
-    var presenter: MainScreenContract.Presenter = MainScreenFragmentPresenter()
+   // var presenter: MainScreenContract.Presenter = MainScreenFragmentPresenter()
 
     companion object {
         fun newInstance(): MainScreenFragment {
@@ -56,7 +58,9 @@ class MainScreenFragment() : android.support.v4.app.Fragment(), MainScreenContra
             scanOnclick()
         }
 
-        presenter.init(getActivity()!!)
+        checkBlueToothAdapter()
+
+        checkLocationPermissions()
 
         setDecorationForRecycleViews()
 
@@ -72,8 +76,9 @@ class MainScreenFragment() : android.support.v4.app.Fragment(), MainScreenContra
         super.onActivityResult(requestCode, resultCode, data)
         if (requestCode == REQUEST_ENABLE_BLUETOOTH) {
             if (resultCode == Activity.RESULT_OK) {
-                if (presenter.isAdapterEnabled()) {
+                if (adapter!!.isEnabled) {
                     toast(R.string.bluetooth_enabled)
+                    pairedDeviceList()
                 } else {
                     toast(R.string.bluetooth_disabled)
                 }
@@ -94,7 +99,6 @@ class MainScreenFragment() : android.support.v4.app.Fragment(), MainScreenContra
     override fun setHeaderText(state: Int) {
         when (state) {
             HEADER_TEXT_NO_RESULT -> header.text = getString(R.string.paired_devices_no_result)
-            HEADER_TEXT_ENABLE -> header.text = getString(R.string.enable)
         }
     }
 
@@ -127,12 +131,14 @@ class MainScreenFragment() : android.support.v4.app.Fragment(), MainScreenContra
     }
 
     fun pairedDeviceList() {
-        var paired_devices = presenter.getPairedDeviceList()
+        var paired_devices = adapter!!.bondedDevices
+        Log.i(TAG, "get paired device")
         if (!paired_devices.isEmpty()) {
             val listOFDevices: ArrayList<BluetoothDevice> = ArrayList()
             for (device: BluetoothDevice in paired_devices) {
                 listOFDevices.add(device)
             }
+            Log.i(TAG, "get listOFDevices device")
             setRecyclerAdapter(listOFDevices)
         } else {
             setHeaderText(HEADER_TEXT_NO_RESULT)
@@ -159,6 +165,25 @@ class MainScreenFragment() : android.support.v4.app.Fragment(), MainScreenContra
 
     fun scanOnclick() {
         mDevicesRecycleViewAdapter.clear()
-        presenter.scanForBT()
+        adapter!!.startDiscovery()
+    }
+
+    fun checkBlueToothAdapter() {
+        adapter =BluetoothAdapter.getDefaultAdapter()
+        if (adapter == null) {
+            return
+        }
+        if (!adapter!!.isEnabled) {
+            val enableBluetoothIntent = Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)
+            startActivityForResult(enableBluetoothIntent, REQUEST_ENABLE_BLUETOOTH)
+        }
+    }
+
+    fun checkLocationPermissions() {
+        var permissionCheck = getActivity()!!.checkSelfPermission("Manifest.permission.ACCESS_FINE_LOCATION");
+        permissionCheck += getActivity()!!.checkSelfPermission("Manifest.permission.ACCESS_COARSE_LOCATION");
+        if (permissionCheck != 0) {
+            ActivityCompat.requestPermissions(getActivity()!!, arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION), 101); //Any number
+        }
     }
 }
