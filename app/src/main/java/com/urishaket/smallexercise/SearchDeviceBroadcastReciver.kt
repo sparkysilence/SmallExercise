@@ -7,7 +7,7 @@ import android.content.Context
 import android.content.Intent
 import android.util.Log
 
-class SearchDeviceBroadcastReciver(private var mainFragment:MainScreenContract.View):BroadcastReceiver(){
+class SearchDeviceBroadcastReciver(private var mainFragment:MainScreenInterface.View):BroadcastReceiver(){
     private val TAG = "BroadcastReciver"
 
     private val DISCOVERY_FINISHED =  "Discovery has finished"
